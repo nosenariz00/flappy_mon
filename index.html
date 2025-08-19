@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Flappy Monads</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="favicon.ico" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Flappy Monads</h1>
+      <div class="header-actions">
+        <div id="wallet-display" class="wallet-display hidden" title="No conectado"></div>
+        <div class="theme-toggle">
+          <button id="themeBtn">🌙</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="lobby">
+      <div class="wallet-section">
+        <button id="connectWalletBtn">Conectar Wallet</button>
+        <button id="disconnectWalletBtn" class="hidden">Desconectar</button>
+      </div>
+
+      <div class="controls hidden" id="controls">
+        <button id="mintBtn">Mint NFT</button>
+        <button id="playBtn">Jugar</button>
+        <button id="leaderboardBtn" onclick="window.location.href='leaderboard.html'">Leaderboard</button>
+      </div>
+    </main>
+
+    <section id="gameScreen" class="hidden">
+      <div id="flappyContainer" style="width:100%;max-width:1280px;min-height:200px;margin:0 auto;">
+        <canvas id="gameCanvas" width="400" height="600" style="display:none"></canvas>
+        <div class="hud">
+          <div class="hud-buttons">
+            <button id="restartBtn">Reiniciar</button>
+            <button id="backBtn">Salir</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <small>Testnet: Monad</small>
+    </footer>
+  </div>
+
+  <!-- Scripts externos -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.11.9/lib/p5.min.js"></script>
+
+  <!-- Dependencias del juego -->
+  <script src="rectCircle.js"></script>
+  
+
+  <!-- Scripts de la app -->
+  <script type="module" src="wallet.js"></script>
+  <script type="module" src="main.js"></script>
+  <script src="theme.js"></script>
+</body>
+</html>
