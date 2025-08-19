@@ -1,9 +1,6 @@
 // wallet.js — Monad Testnet (EVM-like) integration
 
 import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js";
-import { createAppKit } from "https://cdn.jsdelivr.net/npm/@reown/appkit@1.7.19/+esm";
-import { sepolia } from "https://cdn.jsdelivr.net/npm/@reown/appkit@1.7.19/networks/+esm";
-import { walletConnect } from "https://cdn.jsdelivr.net/npm/@reown/appkit-adapter-wagmi@1.7.19/+esm";
 
 const connectWalletBtn = document.getElementById('connectWalletBtn');
 const mintBtn = document.getElementById('mintBtn');
@@ -21,20 +18,14 @@ const CONTRACT_ABI = [
   "function balanceOf(address owner) view returns (uint256)"
 ];
 
-// Solo parámetros de red para AppKit
-const projectId = "c417e04bf02de050bec4b0ffaf5ff60d"; // pon tu projectId real
-const appKit = createAppKit({
-  adapters: [
-    walletConnect({ projectId })
-  ],
-  networks: [sepolia],
-  metadata: {
-    name: "Flappy Mon",
-    description: "Juego Flappy Mon con wallet",
-    url: window.location.origin,
-    icons: ["https://walletconnect.com/walletconnect-logo.png"],
-  },
-});
+// Parámetros de la red Monad Testnet
+const MONAD_PARAMS = {
+  chainId: '0x279F', // 10143 decimal
+  chainName: 'Monad Testnet',
+  nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
+  rpcUrls: ['https://testnet-rpc.monad.xyz'],
+  blockExplorerUrls: ['https://testnet.monadexplorer.com/'],
+};
 
 mintBtn.disabled = true;
 
@@ -61,16 +52,39 @@ function showStatusMessage(message, type = 'info', link = null) {
   }, 3000);
 }
 
-// Nueva función para conectar wallet usando AppKit
 async function connectWallet() {
   try {
-    const session = await appKit.connect();
-    currentAccount = session.accounts[0].address;
-    walletDisplay.textContent = `${currentAccount.substring(0, 6)}...${currentAccount.substring(currentAccount.length - 4)}`;
+    if (!window.ethereum) {
+      showStatusMessage("MetaMask no está instalado.", "error");
+      return;
+    }
+    const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+    if (currentChainId !== MONAD_PARAMS.chainId) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: MONAD_PARAMS.chainId }],
+        });
+      } catch (switchError) {
+        if (switchError.code === 4902) {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [MONAD_PARAMS],
+          });
+        } else {
+          showStatusMessage("Error cambiando de red: " + switchError.message, "error");
+          throw switchError;
+        }
+      }
+    }
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    currentAccount = accounts[0];
+    const shortAddr = `${currentAccount.substring(0, 6)}...${currentAccount.substring(currentAccount.length - 4)}`;
+    walletDisplay.textContent = shortAddr;
     walletDisplay.title = currentAccount;
     walletDisplay.classList.remove('hidden');
     walletDisplay.setAttribute('data-tooltip', 'Desconectar wallet');
-    provider = new ethers.providers.Web3Provider(session.provider);
+    provider = new ethers.providers.Web3Provider(window.ethereum);
     signer = provider.getSigner();
     contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
     mintBtn.disabled = false;
@@ -178,8 +192,5 @@ walletDisplay.addEventListener('mouseenter', () => {
 walletDisplay.addEventListener('click', () => {
   disconnectWallet();
 });
-  walletDisplay.classList.add('hidden');
-  walletDisplay.textContent = '';
-  walletDisplay.removeAttribute('title');
-  walletDisplay.removeAttribute('data-tooltip');
-  walletDisplay.removeAttribute('data-tooltip');
+
+

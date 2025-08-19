@@ -34,78 +34,6 @@ function preload() {
   ];
 }
 
-let isPaused = false;
-let pauseOverlay;
-let volume = 1;
-
-// Crear overlay de pausa
-function createPauseOverlay() {
-  pauseOverlay = document.createElement('div');
-  pauseOverlay.id = 'pauseOverlay';
-  pauseOverlay.style.position = 'fixed';
-  pauseOverlay.style.top = '0';
-  pauseOverlay.style.left = '0';
-  pauseOverlay.style.width = '100vw';
-  pauseOverlay.style.height = '100vh';
-  pauseOverlay.style.background = 'rgba(0,0,0,0.7)';
-  pauseOverlay.style.display = 'flex';
-  pauseOverlay.style.flexDirection = 'column';
-  pauseOverlay.style.justifyContent = 'center';
-  pauseOverlay.style.alignItems = 'center';
-  pauseOverlay.style.zIndex = '99999';
-
-  pauseOverlay.innerHTML = `
-    <div style="background:#222;padding:32px 24px;border-radius:18px;box-shadow:0 4px 32px #000;text-align:center;min-width:260px;">
-      <h2 style="color:#ffcc00;margin-bottom:18px;">⏸️ Pausa</h2>
-      <label style="color:#fff;font-size:1.1em;">
-        Volumen:
-        <input id="pauseVolume" type="range" min="0" max="1" step="0.01" value="${volume}" style="width:120px;vertical-align:middle;">
-      </label>
-      <div style="margin-top:24px;display:flex;gap:16px;justify-content:center;">
-        <button id="pauseResumeBtn" style="padding:10px 18px;border-radius:8px;background:#ffcc00;color:#222;font-weight:600;border:none;cursor:pointer;">Continuar</button>
-        <button id="pauseExitBtn" style="padding:10px 18px;border-radius:8px;background:#e60026;color:#fff;font-weight:600;border:none;cursor:pointer;">Salir</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(pauseOverlay);
-
-  document.getElementById('pauseVolume').addEventListener('input', (e) => {
-    volume = parseFloat(e.target.value);
-    setGameVolume(volume);
-  });
-  document.getElementById('pauseResumeBtn').onclick = () => {
-    hidePauseOverlay();
-    isPaused = false;
-    loop();
-  };
-  document.getElementById('pauseExitBtn').onclick = () => {
-    hidePauseOverlay();
-    isPaused = false;
-    // Simula el botón salir
-    if (window.parent && window.parent.document) {
-      const backBtn = window.parent.document.getElementById('backBtn');
-      if (backBtn) backBtn.click();
-    } else {
-      // Fallback: recarga la página
-      window.location.reload();
-    }
-  };
-}
-
-function hidePauseOverlay() {
-  if (pauseOverlay) {
-    pauseOverlay.remove();
-    pauseOverlay = null;
-  }
-}
-
-// Aplica volumen a todos los audios
-function setGameVolume(vol) {
-  audio_hit.volume = vol;
-  audio_point.volume = vol;
-  for (let k in audio_wing) audio_wing[k].volume = vol;
-}
-
 function setup() {
   // Ajusta el tamaño del canvas al contenedor y dispositivo
   const container = document.getElementById('flappyContainer');
@@ -140,16 +68,11 @@ function setup() {
     img_fondo.width * alto_escenario / img_fondo.height,
     alto_escenario
   );
-  setGameVolume(volume);
 }
 
 let contadorFotogramas = 0;
 
 function draw() {
-  if (isPaused) {
-    noLoop();
-    return;
-  }
   for (let i = 0; i < 4; i++) {
     image(img_fondo, img_fondo.width * i, 0);
   }
@@ -182,32 +105,13 @@ function windowResized() {
   canvas.style("height", `${height*escala}px`);
 }
 
-function keyPressed(e) {
-  if (isPaused) return;
-  // Solo si canvas tiene foco
-  if (document.activeElement !== canvas.elt) return;
-  if (key === 'Escape') {
-    isPaused = true;
-    createPauseOverlay();
-    noLoop();
-    return;
-  }
+function keyPressed() {
   clic();
 }
 
-function mouseReleased(e) {
-  if (isPaused) return;
-  // Solo si el clic fue dentro del canvas
-  if (!isEventInsideCanvas(e)) return;
+function mouseReleased() {
   clic();
 }
-
-// Para dispositivos táctiles
-canvas?.elt?.addEventListener('touchend', function(e) {
-  if (isPaused) return;
-  if (!isEventInsideCanvas(e)) return;
-  clic();
-});
 
 let contador_clics = 0;
 
@@ -325,38 +229,4 @@ function Piso() {
   this.areaColision = function() {
     return new Rectangle(this.x, this.y, this.w, this.h);
   };
-}
-
-// Al cargar, conectar el botón de pausa si existe
-window.addEventListener('DOMContentLoaded', () => {
-  const pauseBtn = document.getElementById('pauseBtn');
-  if (pauseBtn) {
-    pauseBtn.onclick = function () {
-      if (!isPaused) {
-        isPaused = true;
-        createPauseOverlay();
-        noLoop();
-      }
-    };
-  }
-});
-
-// Solo permite clics/teclas dentro del canvas
-function isEventInsideCanvas(e) {
-  if (!canvas || !canvas.elt) return false;
-  const rect = canvas.elt.getBoundingClientRect();
-  let x, y;
-  if (e.touches && e.touches.length) {
-    x = e.touches[0].clientX;
-    y = e.touches[0].clientY;
-  } else {
-    x = e.clientX;
-    y = e.clientY;
-  }
-  return (
-    x >= rect.left &&
-    x <= rect.right &&
-    y >= rect.top &&
-    y <= rect.bottom
-  );
 }
